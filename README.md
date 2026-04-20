@@ -2,7 +2,9 @@
 
 
 cd frontend
+
 npm install
+
 npx expo start
 
 pra ver como fica no celular (pq o qr code do expo n funciona) abre o cmd, digita ipconfig e pega o seu ipv4
