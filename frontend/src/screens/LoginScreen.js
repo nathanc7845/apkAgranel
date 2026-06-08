@@ -2,23 +2,53 @@ import React, { useState } from 'react';
 import {
     StyleSheet, Text, View, TextInput, TouchableOpacity,
     SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Image,
+    ActivityIndicator
 } from 'react-native';
 import { theme } from '../theme/colors';
+import { useAuth } from '../context/AuthContext';
+import { Feather } from '@expo/vector-icons';
 
 export default function LoginScreen({ navigation }) {
+    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [focusedField, setFocusedField] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
+        setErrorMsg('');
         const mail = email.trim();
         const pass = password.trim();
+
+        if (!mail || !pass) {
+            setErrorMsg('Preencha todos os campos.');
+            return;
+        }
+
+        // Atalho para o demandante (teste rápido)
         if (mail === '1' && pass === '1') {
             navigation.navigate('Demander');
-        } else if (mail === '2' && pass === '2') {
+            return;
+        }
+
+        // Atalho para o técnico
+        if (mail === '2' && pass === '2') {
             navigation.navigate('Technician');
+            return;
+        }
+
+        setIsSubmitting(true);
+        const result = await login(mail, pass);
+        setIsSubmitting(false);
+
+        if (result.success) {
+            navigation.navigate('Demander');
+        } else {
+            setErrorMsg(result.message);
         }
     };
+
     return (
         <SafeAreaView style={styles.container}>
             <KeyboardAvoidingView
@@ -39,6 +69,14 @@ export default function LoginScreen({ navigation }) {
                         />
                     </View>
 
+                    {/* Error feedback */}
+                    {errorMsg ? (
+                        <View style={styles.errorContainer}>
+                            <Feather name="alert-circle" size={16} color="#EB5757" />
+                            <Text style={styles.errorText}>{errorMsg}</Text>
+                        </View>
+                    ) : null}
+
                     <View style={styles.form}>
                         <View style={styles.inputWrapper}>
                             <Text style={styles.label}>Usuário / E-mail</Text>
@@ -51,7 +89,7 @@ export default function LoginScreen({ navigation }) {
                                     placeholder="nome@email.com"
                                     placeholderTextColor={theme.colors.textMuted}
                                     value={email}
-                                    onChangeText={setEmail}
+                                    onChangeText={(t) => { setEmail(t); setErrorMsg(''); }}
                                     autoCapitalize="none"
                                     onFocus={() => setFocusedField('email')}
                                     onBlur={() => setFocusedField(null)}
@@ -70,7 +108,7 @@ export default function LoginScreen({ navigation }) {
                                     placeholder="Sua senha"
                                     placeholderTextColor={theme.colors.textMuted}
                                     value={password}
-                                    onChangeText={setPassword}
+                                    onChangeText={(t) => { setPassword(t); setErrorMsg(''); }}
                                     secureTextEntry
                                     onFocus={() => setFocusedField('password')}
                                     onBlur={() => setFocusedField(null)}
@@ -78,10 +116,21 @@ export default function LoginScreen({ navigation }) {
                             </View>
                         </View>
 
-                        <TouchableOpacity style={styles.button} activeOpacity={0.85} onPress={handleLogin}>
-                            <Text style={styles.buttonText}>Entrar</Text>
+                        <TouchableOpacity
+                            style={[styles.button, isSubmitting && styles.buttonDisabled]}
+                            activeOpacity={0.85}
+                            onPress={handleLogin}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <ActivityIndicator color="#FFF" size="small" />
+                            ) : (
+                                <Text style={styles.buttonText}>Entrar</Text>
+                            )}
                         </TouchableOpacity>
-                    </View>                    <View style={styles.footer}>
+                    </View>
+                    
+                    <View style={styles.footer}>
                         <Text style={styles.footerText}>Ainda não tem conta? </Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Signup')} activeOpacity={0.6}>
                             <Text style={styles.footerLink}> Criar conta</Text>
@@ -126,6 +175,26 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: theme.colors.textSecondary,
         marginTop: 6,
+    },
+
+
+    errorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(235, 87, 87, 0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(235, 87, 87, 0.3)',
+        borderRadius: theme.borderRadius.m,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginBottom: 20,
+    },
+    errorText: {
+        fontFamily: 'Poppins_500Medium',
+        fontSize: 13,
+        color: '#EB5757',
+        marginLeft: 10,
+        flex: 1,
     },
 
 
@@ -175,6 +244,9 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         alignItems: 'center',
         marginTop: 8,
+    },
+    buttonDisabled: {
+        opacity: 0.6,
     },
     buttonText: {
         fontFamily: 'Poppins_600SemiBold',

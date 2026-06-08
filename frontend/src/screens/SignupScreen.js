@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import {
     StyleSheet, Text, View, TextInput, TouchableOpacity,
-    SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Image, FlatList, useWindowDimensions
+    SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Image, FlatList, useWindowDimensions,
+    Alert, ActivityIndicator
 } from 'react-native';
 import { theme } from '../theme/colors';
+import { useAuth } from '../context/AuthContext';
+import { Feather } from '@expo/vector-icons';
 
 const STORES = [
     { id: 'id1', name: 'Loja 04 Santa Efigênia' },
@@ -21,10 +24,58 @@ const STORES = [
 export default function SignupScreen({ navigation }) {
     const { width } = useWindowDimensions();
     const isLargeScreen = width > 768;
+    const { signup } = useAuth();
+
+    const [name, setName] = useState('');
     const [selectedStore, setSelectedStore] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [focusedField, setFocusedField] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
+    const [successMsg, setSuccessMsg] = useState('');
+
+    const validate = () => {
+        if (!name.trim()) return 'Informe seu nome.';
+        if (!selectedStore) return 'Selecione a loja onde você trabalha.';
+        if (!email.trim()) return 'Informe seu e-mail.';
+        if (!email.includes('@')) return 'E-mail inválido.';
+        if (password.length < 6) return 'A senha deve ter pelo menos 6 caracteres.';
+        return null;
+    };
+
+    const handleSignup = async () => {
+        setErrorMsg('');
+        setSuccessMsg('');
+
+        const validationError = validate();
+        if (validationError) {
+            setErrorMsg(validationError);
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        const store = STORES.find(s => s.id === selectedStore);
+        const result = await signup(name, email, password, store.name);
+
+        setIsSubmitting(false);
+
+        if (result.success) {
+            setSuccessMsg(result.message);
+            // Clear form
+            setName('');
+            setEmail('');
+            setPassword('');
+            setSelectedStore('');
+            // Navigate to login after short delay
+            setTimeout(() => {
+                navigation.navigate('Login');
+            }, 1500);
+        } else {
+            setErrorMsg(result.message);
+        }
+    };
 
     const renderStoreChip = ({ item }) => {
         const isSelected = selectedStore === item.id;
@@ -59,7 +110,7 @@ export default function SignupScreen({ navigation }) {
                             style={styles.backButton}
                             activeOpacity={0.6}
                         >
-                            <Text style={styles.backIcon}>←</Text>
+                            <Feather name="arrow-left" size={20} color={theme.colors.text} />
                         </TouchableOpacity>
 
                         <View style={styles.headerContent}>
@@ -71,14 +122,50 @@ export default function SignupScreen({ navigation }) {
                             <View>
                                 <Text style={styles.title}>Criar conta</Text>
                                 <Text style={styles.subtitle}>
-                                    Cadastre-se
+                                    Cadastre-se como demandante
                                 </Text>
                             </View>
                         </View>
                     </View>
 
+                    {/* Feedback messages */}
+                    {errorMsg ? (
+                        <View style={styles.errorContainer}>
+                            <Feather name="alert-circle" size={16} color="#EB5757" />
+                            <Text style={styles.errorText}>{errorMsg}</Text>
+                        </View>
+                    ) : null}
+
+                    {successMsg ? (
+                        <View style={styles.successContainer}>
+                            <Feather name="check-circle" size={16} color={theme.colors.primary} />
+                            <Text style={styles.successText}>{successMsg}</Text>
+                        </View>
+                    ) : null}
+
                    
                     <View style={styles.form}>
+                        {/* Campo Nome */}
+                        <View style={styles.inputWrapper}>
+                            <Text style={styles.label}>Nome completo</Text>
+                            <View style={[
+                                styles.inputContainer,
+                                focusedField === 'name' && styles.inputFocused,
+                            ]}>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Seu nome"
+                                    placeholderTextColor={theme.colors.textMuted}
+                                    value={name}
+                                    onChangeText={setName}
+                                    autoCapitalize="words"
+                                    onFocus={() => setFocusedField('name')}
+                                    onBlur={() => setFocusedField(null)}
+                                />
+                            </View>
+                        </View>
+
+                        {/* Seleção de Loja */}
                         <View style={styles.inputWrapper}>
                             <Text style={styles.label}>Loja que você trabalha</Text>
                             {isLargeScreen ? (
@@ -102,6 +189,7 @@ export default function SignupScreen({ navigation }) {
                             )}
                         </View>
 
+                        {/* Campo E-mail */}
                         <View style={styles.inputWrapper}>
                             <Text style={styles.label}>E-mail</Text>
                             <View style={[
@@ -122,6 +210,7 @@ export default function SignupScreen({ navigation }) {
                             </View>
                         </View>
 
+                        {/* Campo Senha */}
                         <View style={styles.inputWrapper}>
                             <Text style={styles.label}>Senha</Text>
                             <View style={[
@@ -141,8 +230,17 @@ export default function SignupScreen({ navigation }) {
                             </View>
                         </View>
 
-                        <TouchableOpacity style={styles.button} activeOpacity={0.85}>
-                            <Text style={styles.buttonText}>Cadastrar</Text>
+                        <TouchableOpacity
+                            style={[styles.button, isSubmitting && styles.buttonDisabled]}
+                            activeOpacity={0.85}
+                            onPress={handleSignup}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <ActivityIndicator color="#FFF" size="small" />
+                            ) : (
+                                <Text style={styles.buttonText}>Cadastrar</Text>
+                            )}
                         </TouchableOpacity>
                     </View>
 
@@ -186,10 +284,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 24,
     },
-    backIcon: {
-        fontSize: 20,
-        color: theme.colors.text,
-    },
     headerContent: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -210,6 +304,44 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: theme.colors.textSecondary,
         marginTop: 2,
+    },
+
+
+    errorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(235, 87, 87, 0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(235, 87, 87, 0.3)',
+        borderRadius: theme.borderRadius.m,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginBottom: 20,
+    },
+    errorText: {
+        fontFamily: 'Poppins_500Medium',
+        fontSize: 13,
+        color: '#EB5757',
+        marginLeft: 10,
+        flex: 1,
+    },
+    successContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(74, 124, 63, 0.15)',
+        borderWidth: 1,
+        borderColor: 'rgba(74, 124, 63, 0.3)',
+        borderRadius: theme.borderRadius.m,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginBottom: 20,
+    },
+    successText: {
+        fontFamily: 'Poppins_500Medium',
+        fontSize: 13,
+        color: theme.colors.primaryLight,
+        marginLeft: 10,
+        flex: 1,
     },
 
 
@@ -248,6 +380,9 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         alignItems: 'center',
         marginTop: 8,
+    },
+    buttonDisabled: {
+        opacity: 0.6,
     },
     buttonText: {
         fontFamily: 'Poppins_600SemiBold',

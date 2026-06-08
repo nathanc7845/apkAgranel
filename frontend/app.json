@@ -1,20 +1,27 @@
 {
-    "expo": {
-        "name": "srAgranel",
-        "slug": "sragranel",
-        "version": "1.0.0",
-        "orientation": "portrait",
-        "icon": "./assets/logo.png",
-        "userInterfaceStyle": "light",
-        "splash": {
-            "image": "./assets/logo.png"
-        },
-        "assetBundlePatterns": [
-            "**/*"
-        ],
-        "ios": {
-            "supportsTablet": true
-        },
-        "android": {}
+  "expo": {
+    "name": "srAgranel",
+    "slug": "sragranel",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/fundologo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/fundologo.png"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.estacio.sragranel"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "379add6a-76d0-455d-a799-3f0426faeaba"
+      }
     }
+  }
 }

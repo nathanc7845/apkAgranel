@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { theme } from '../theme/colors';
 import { useDemands } from '../context/DemandContext';
+import { useAuth } from '../context/AuthContext';
 import { Feather } from '@expo/vector-icons';
 
 const STORES = [
@@ -22,6 +23,7 @@ const STORES = [
 
 export default function DemanderScreen({ navigation }) {
     const { demands, addDemand, deleteDemand, editDemand } = useDemands();
+    const { currentUser, logout } = useAuth();
     const { width } = useWindowDimensions();
     const isLargeScreen = width > 768;
     const [selectedStore, setSelectedStore] = useState('');
@@ -29,11 +31,13 @@ export default function DemanderScreen({ navigation }) {
     const [focusedField, setFocusedField] = useState(null);
     const [editingDemandId, setEditingDemandId] = useState(null);
 
+    const userName = currentUser?.name || 'Usuário';
+
     const handleSaveDemand = () => {
         if (!selectedStore || !description.trim()) return;
-        
+
         const store = STORES.find(s => s.id === selectedStore);
-        
+
         if (editingDemandId) {
             editDemand(editingDemandId, store.name, description);
             setEditingDemandId(null);
@@ -42,12 +46,13 @@ export default function DemanderScreen({ navigation }) {
                 id: Math.random().toString().substring(2, 6),
                 storeName: store.name,
                 info: description,
+                demanderName: userName,
                 status: 'recebido',
-                time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                time: `${new Date().getHours().toString().padStart(2, '0')}:${new Date().getMinutes().toString().padStart(2, '0')}`
             };
             addDemand(newDemand);
         }
-        
+
         setDescription('');
         setSelectedStore('');
     };
@@ -63,6 +68,11 @@ export default function DemanderScreen({ navigation }) {
         setEditingDemandId(null);
         setDescription('');
         setSelectedStore('');
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigation?.reset({ index: 0, routes: [{ name: 'Login' }] });
     };
 
     const renderStoreChip = ({ item }) => {
@@ -88,20 +98,20 @@ export default function DemanderScreen({ navigation }) {
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <View style={[
-                        styles.badge, 
-                        item.status === 'recebido' ? styles.badgeRecebido : 
-                        item.status === 'em andamento' ? styles.badgeAndamento : styles.badgeConcluido
+                        styles.badge,
+                        item.status === 'recebido' ? styles.badgeRecebido :
+                            item.status === 'em andamento' ? styles.badgeAndamento : styles.badgeConcluido
                     ]}>
                         <Text style={[
                             styles.badgeText,
-                            item.status === 'recebido' ? styles.badgeTextRecebido : 
-                            item.status === 'em andamento' ? styles.badgeTextAndamento : styles.badgeTextConcluido
+                            item.status === 'recebido' ? styles.badgeTextRecebido :
+                                item.status === 'em andamento' ? styles.badgeTextAndamento : styles.badgeTextConcluido
                         ]}>
                             {item.status.toUpperCase()}
                         </Text>
                     </View>
                     {item.status === 'recebido' && (
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={() => handleEditStart(item)}
                             style={{ marginLeft: 12, padding: 4 }}
                             activeOpacity={0.6}
@@ -109,7 +119,7 @@ export default function DemanderScreen({ navigation }) {
                             <Feather name="edit-2" size={18} color={theme.colors.primary} />
                         </TouchableOpacity>
                     )}
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => deleteDemand(item.id)}
                         style={{ marginLeft: 12, padding: 4 }}
                         activeOpacity={0.6}
@@ -136,14 +146,14 @@ export default function DemanderScreen({ navigation }) {
 
                     <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
                         <View style={{ flex: 1, paddingRight: 16 }}>
-                            <Text style={styles.title} numberOfLines={2}>Nova Demanda</Text>
+                            <Text style={styles.title} numberOfLines={2}>Olá, {userName}!</Text>
                             <Text style={styles.subtitle} numberOfLines={2}>
                                 Abra um chamado para o suporte técnico
                             </Text>
                         </View>
 
                         <TouchableOpacity
-                            onPress={() => navigation?.reset({ index: 0, routes: [{ name: 'Login' }] })}
+                            onPress={handleLogout}
                             style={styles.logoutButton}
                             activeOpacity={0.6}
                         >
@@ -153,96 +163,96 @@ export default function DemanderScreen({ navigation }) {
 
                     <View style={[styles.responsiveWrapper, isLargeScreen && styles.responsiveWrapperLarge]}>
 
-                    <View style={styles.formContainer}>
-                        <Text style={styles.sectionTitle}>Selecione a Loja</Text>
-                        {isLargeScreen ? (
-                            <View style={styles.chipList}>
-                                {STORES.map(item => (
-                                    <React.Fragment key={item.id}>
-                                        {renderStoreChip({ item })}
-                                    </React.Fragment>
-                                ))}
-                            </View>
-                        ) : (
-                            <FlatList
-                                data={STORES}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                keyExtractor={item => item.id}
-                                renderItem={renderStoreChip}
-                                contentContainerStyle={{ paddingRight: 20 }}
-                                style={{ flexGrow: 0, marginBottom: 20 }}
-                            />
-                        )}
-
-                        <View style={styles.inputWrapper}>
-                            <Text style={styles.label}>Descrição do Problema</Text>
-                            <View style={[
-                                styles.inputContainer,
-                                focusedField === 'desc' && styles.inputFocused,
-                            ]}>
-                                <TextInput
-                                    style={[styles.input, styles.textArea]}
-                                    placeholder="Ex: Ponto de rede desativado..."
-                                    placeholderTextColor={theme.colors.textMuted}
-                                    value={description}
-                                    onChangeText={setDescription}
-                                    multiline
-                                    numberOfLines={4}
-                                    textAlignVertical="top"
-                                    onFocus={() => setFocusedField('desc')}
-                                    onBlur={() => setFocusedField(null)}
+                        <View style={styles.formContainer}>
+                            <Text style={styles.sectionTitle}>Selecione a Loja</Text>
+                            {isLargeScreen ? (
+                                <View style={styles.chipList}>
+                                    {STORES.map(item => (
+                                        <React.Fragment key={item.id}>
+                                            {renderStoreChip({ item })}
+                                        </React.Fragment>
+                                    ))}
+                                </View>
+                            ) : (
+                                <FlatList
+                                    data={STORES}
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    keyExtractor={item => item.id}
+                                    renderItem={renderStoreChip}
+                                    contentContainerStyle={{ paddingRight: 20 }}
+                                    style={{ flexGrow: 0, marginBottom: 20 }}
                                 />
-                            </View>
-                        </View>
+                            )}
 
-                        {editingDemandId ? (
-                            <View style={styles.buttonRow}>
-                                <TouchableOpacity 
+                            <View style={styles.inputWrapper}>
+                                <Text style={styles.label}>Descrição do Problema</Text>
+                                <View style={[
+                                    styles.inputContainer,
+                                    focusedField === 'desc' && styles.inputFocused,
+                                ]}>
+                                    <TextInput
+                                        style={[styles.input, styles.textArea]}
+                                        placeholder="Ex: Ponto de rede desativado..."
+                                        placeholderTextColor={theme.colors.textMuted}
+                                        value={description}
+                                        onChangeText={setDescription}
+                                        multiline
+                                        numberOfLines={4}
+                                        textAlignVertical="top"
+                                        onFocus={() => setFocusedField('desc')}
+                                        onBlur={() => setFocusedField(null)}
+                                    />
+                                </View>
+                            </View>
+
+                            {editingDemandId ? (
+                                <View style={styles.buttonRow}>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.button,
+                                            { flex: 1, marginRight: 8, marginTop: 0 },
+                                            (!selectedStore || !description.trim()) && styles.buttonDisabled
+                                        ]}
+                                        activeOpacity={0.85}
+                                        onPress={handleSaveDemand}
+                                        disabled={!selectedStore || !description.trim()}
+                                    >
+                                        <Text style={styles.buttonText}>Atualizar</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={[styles.button, styles.cancelButton, { flex: 1, marginLeft: 8, marginTop: 0 }]}
+                                        activeOpacity={0.85}
+                                        onPress={handleCancelEdit}
+                                    >
+                                        <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancelar</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                <TouchableOpacity
                                     style={[
                                         styles.button,
-                                        { flex: 1, marginRight: 8, marginTop: 0 },
                                         (!selectedStore || !description.trim()) && styles.buttonDisabled
-                                    ]} 
+                                    ]}
                                     activeOpacity={0.85}
                                     onPress={handleSaveDemand}
                                     disabled={!selectedStore || !description.trim()}
                                 >
-                                    <Text style={styles.buttonText}>Atualizar</Text>
+                                    <Text style={styles.buttonText}>Registrar Chamado</Text>
                                 </TouchableOpacity>
-
-                                <TouchableOpacity 
-                                    style={[styles.button, styles.cancelButton, { flex: 1, marginLeft: 8, marginTop: 0 }]} 
-                                    activeOpacity={0.85}
-                                    onPress={handleCancelEdit}
-                                >
-                                    <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancelar</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ) : (
-                            <TouchableOpacity 
-                                style={[
-                                    styles.button, 
-                                    (!selectedStore || !description.trim()) && styles.buttonDisabled
-                                ]} 
-                                activeOpacity={0.85}
-                                onPress={handleSaveDemand}
-                                disabled={!selectedStore || !description.trim()}
-                            >
-                                <Text style={styles.buttonText}>Registrar Chamado</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
+                            )}
+                        </View>
 
 
-                    <View style={styles.demandsSection}>
-                        <Text style={styles.sectionTitle}>Meus Chamados ({demands.length})</Text>
-                        {demands.map(demand => (
-                            <React.Fragment key={demand.id}>
-                                {renderDemand({ item: demand })}
-                            </React.Fragment>
-                        ))}
-                    </View>
+                        <View style={styles.demandsSection}>
+                            <Text style={styles.sectionTitle}>Meus Chamados ({demands.length})</Text>
+                            {demands.map(demand => (
+                                <React.Fragment key={demand.id}>
+                                    {renderDemand({ item: demand })}
+                                </React.Fragment>
+                            ))}
+                        </View>
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>

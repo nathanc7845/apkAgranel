@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     StyleSheet, Text, View, TouchableOpacity,
     SafeAreaView, FlatList, useWindowDimensions
@@ -10,10 +10,7 @@ import { Feather } from '@expo/vector-icons';
 export default function TechnicianScreen({ navigation }) {
     const { width } = useWindowDimensions();
     const isLargeScreen = width > 768;
-    const [assignedStore] = useState('Loja 04 Santa Efigênia'); // coloca aq a loja q o cara trabalha nesse usestate ai, coloquei esse santa ef so pra teste
-    const { demands, updateDemandStatus } = useDemands();
-
-    const storeDemands = demands.filter(d => d.storeName === assignedStore);
+    const { demands, updateDemandStatus, deleteDemand } = useDemands();
 
     const renderActionButtons = (item) => {
         if (item.status === 'recebido') {
@@ -50,7 +47,10 @@ export default function TechnicianScreen({ navigation }) {
     const renderDemand = ({ item }) => (
         <View style={styles.demandCard}>
             <View style={styles.demandHeader}>
-                <Text style={styles.demandId}>Chamado #{item.id}</Text>
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                    <Text style={styles.demandStore} numberOfLines={1}>{item.storeName}</Text>
+                    <Text style={styles.demandId}>Chamado #{item.id}</Text>
+                </View>
                 <View style={[
                     styles.badge,
                     item.status === 'recebido' ? styles.badgeRecebido :
@@ -64,9 +64,23 @@ export default function TechnicianScreen({ navigation }) {
                         {item.status.toUpperCase()}
                     </Text>
                 </View>
+                <TouchableOpacity
+                    onPress={() => deleteDemand(item.id)}
+                    style={{ marginLeft: 12, padding: 4 }}
+                    activeOpacity={0.6}
+                >
+                    <Feather name="trash-2" size={18} color="#EB5757" />
+                </TouchableOpacity>
             </View>
 
             <Text style={styles.demandInfo}>{item.info}</Text>
+
+            {item.demanderName ? (
+                <View style={styles.demanderRow}>
+                    <Feather name="user" size={13} color={theme.colors.textMuted} />
+                    <Text style={styles.demanderText}>{item.demanderName}</Text>
+                </View>
+            ) : null}
 
             <View style={styles.demandFooter}>
                 <Text style={styles.timeText}>Aberto em {item.time}</Text>
@@ -85,7 +99,7 @@ export default function TechnicianScreen({ navigation }) {
             <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
                 <View style={{ flex: 1, paddingRight: 16 }}>
                     <Text style={styles.title} numberOfLines={2}>Painel do Técnico</Text>
-                    <Text style={styles.subtitle} numberOfLines={2}>{assignedStore}</Text>
+                    <Text style={styles.subtitle} numberOfLines={2}>Todas as Lojas</Text>
                 </View>
 
                 <TouchableOpacity
@@ -100,14 +114,15 @@ export default function TechnicianScreen({ navigation }) {
             <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
                 <View style={[styles.responsiveWrapper, isLargeScreen && styles.responsiveWrapperLarge]}>
                     <FlatList
-                        data={storeDemands}
+                        data={demands}
                         keyExtractor={item => item.id}
                         renderItem={renderDemand}
                         contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={false}
                         ListEmptyComponent={
                             <View style={styles.emptyContainer}>
-                                <Text style={styles.emptyText}>Nenhum chamado aberto para sua loja no momento.</Text>
+                                <Feather name="inbox" size={48} color={theme.colors.border} style={{ marginBottom: 16 }} />
+                                <Text style={styles.emptyText}>Nenhum chamado aberto no momento.</Text>
                             </View>
                         }
                     />
@@ -181,13 +196,19 @@ const styles = StyleSheet.create({
     demandHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginBottom: 12,
     },
-    demandId: {
+    demandStore: {
         fontFamily: 'Poppins_600SemiBold',
-        fontSize: 14,
-        color: theme.colors.text,
+        fontSize: 15,
+        color: theme.colors.primary,
+    },
+    demandId: {
+        fontFamily: 'Poppins_500Medium',
+        fontSize: 12,
+        color: theme.colors.textMuted,
+        marginTop: 2,
     },
     badge: {
         paddingHorizontal: 10,
@@ -221,7 +242,18 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: theme.colors.text,
         lineHeight: 22,
-        marginBottom: 12,
+        marginBottom: 8,
+    },
+    demanderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    demanderText: {
+        fontFamily: 'Poppins_400Regular',
+        fontSize: 12,
+        color: theme.colors.textMuted,
+        marginLeft: 6,
     },
     demandFooter: {
         flexDirection: 'row',
