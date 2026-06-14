@@ -69,7 +69,7 @@ export default function LoginScreen({ navigation }) {
                         />
                     </View>
 
-                    {/* Error feedback */}
+                    
                     {errorMsg ? (
                         <View style={styles.errorContainer}>
                             <Feather name="alert-circle" size={16} color="#EB5757" />
