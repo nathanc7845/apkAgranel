@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Initialize — just mark as loaded
+       
         setIsLoading(false);
     }, []);
 
@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
         try {
             const users = await getStoredUsers();
 
-            // Check if email already exists
+          
             const emailLower = email.trim().toLowerCase();
             const exists = users.find(u => u.email === emailLower);
             if (exists) {
