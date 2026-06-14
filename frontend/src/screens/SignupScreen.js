@@ -62,13 +62,11 @@ export default function SignupScreen({ navigation }) {
         setIsSubmitting(false);
 
         if (result.success) {
-            setSuccessMsg(result.message);
-            // Clear form
+            setSuccessMsg(result.message);           
             setName('');
             setEmail('');
             setPassword('');
             setSelectedStore('');
-            // Navigate to login after short delay
             setTimeout(() => {
                 navigation.navigate('Login');
             }, 1500);
@@ -128,7 +126,6 @@ export default function SignupScreen({ navigation }) {
                         </View>
                     </View>
 
-                    {/* Feedback messages */}
                     {errorMsg ? (
                         <View style={styles.errorContainer}>
                             <Feather name="alert-circle" size={16} color="#EB5757" />
@@ -145,7 +142,6 @@ export default function SignupScreen({ navigation }) {
 
                    
                     <View style={styles.form}>
-                        {/* Campo Nome */}
                         <View style={styles.inputWrapper}>
                             <Text style={styles.label}>Nome completo</Text>
                             <View style={[
@@ -165,7 +161,6 @@ export default function SignupScreen({ navigation }) {
                             </View>
                         </View>
 
-                        {/* Seleção de Loja */}
                         <View style={styles.inputWrapper}>
                             <Text style={styles.label}>Loja que você trabalha</Text>
                             {isLargeScreen ? (
@@ -189,7 +184,6 @@ export default function SignupScreen({ navigation }) {
                             )}
                         </View>
 
-                        {/* Campo E-mail */}
                         <View style={styles.inputWrapper}>
                             <Text style={styles.label}>E-mail</Text>
                             <View style={[
@@ -210,7 +204,7 @@ export default function SignupScreen({ navigation }) {
                             </View>
                         </View>
 
-                        {/* Campo Senha */}
+
                         <View style={styles.inputWrapper}>
                             <Text style={styles.label}>Senha</Text>
                             <View style={[
